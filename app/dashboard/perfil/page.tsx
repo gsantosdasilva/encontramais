@@ -1,42 +1,43 @@
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { ProfessionalService } from '@/lib/services/professional-service';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Database } from '@/lib/supabase.types';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+"use client";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ProfessionalService } from "@/lib/services/professional-service";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Database } from "@/lib/supabase.types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-type Professional = Database['public']['Tables']['professionals']['Row'];
+type Professional = Database["public"]["Tables"]["professionals"]["Row"];
 
 export default function PerfilPage() {
   const router = useRouter();
   const [professional, setProfessional] = useState<Professional | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    category: '',
-    specialty: '',
-    experience: '',
-    description: '',
-    cep: '',
-    city: '',
-    state: '',
-    address: '',
+    name: "",
+    email: "",
+    phone: "",
+    category: "",
+    specialty: "",
+    experience: "",
+    description: "",
+    cep: "",
+    city: "",
+    state: "",
+    address: "",
   });
 
   useEffect(() => {
     const loadProfessional = async () => {
       try {
         // TODO: Implementar autenticação e obter o ID do profissional logado
-        const professionalId = '123'; // Exemplo
+        const professionalId = "123"; // Exemplo
         const data = await ProfessionalService.getProfessional(professionalId);
         setProfessional(data);
         setFormData({
@@ -45,7 +46,7 @@ export default function PerfilPage() {
           phone: data.phone,
           category: data.category,
           specialty: data.specialty,
-          experience: data.experience?.toString() || '',
+          experience: data.experience?.toString() || "",
           description: data.description,
           cep: data.cep,
           city: data.city,
@@ -53,8 +54,8 @@ export default function PerfilPage() {
           address: data.address,
         });
       } catch (error) {
-        console.error('Erro ao carregar dados do profissional:', error);
-        router.push('/login');
+        console.error("Erro ao carregar dados do profissional:", error);
+        router.push("/login");
       } finally {
         setIsLoading(false);
       }
@@ -67,11 +68,11 @@ export default function PerfilPage() {
     e.preventDefault();
     try {
       setIsSaving(true);
-      setError('');
-      setSuccess('');
+      setError("");
+      setSuccess("");
 
       if (!professional) {
-        throw new Error('Profissional não encontrado');
+        throw new Error("Profissional não encontrado");
       }
 
       await ProfessionalService.updateProfessional(professional.id, {
@@ -88,10 +89,10 @@ export default function PerfilPage() {
         address: formData.address,
       });
 
-      setSuccess('Perfil atualizado com sucesso!');
+      setSuccess("Perfil atualizado com sucesso!");
     } catch (error) {
-      console.error('Erro ao atualizar perfil:', error);
-      setError('Erro ao atualizar perfil. Por favor, tente novamente.');
+      console.error("Erro ao atualizar perfil:", error);
+      setError("Erro ao atualizar perfil. Por favor, tente novamente.");
     } finally {
       setIsSaving(false);
     }
@@ -262,11 +263,11 @@ export default function PerfilPage() {
 
           <div className="flex justify-end">
             <Button type="submit" disabled={isSaving}>
-              {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+              {isSaving ? "Salvando..." : "Salvar Alterações"}
             </Button>
           </div>
         </form>
       </Card>
     </div>
   );
-} 
+}
