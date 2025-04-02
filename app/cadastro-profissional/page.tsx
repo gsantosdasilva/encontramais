@@ -32,15 +32,16 @@ import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ProfessionalService } from "@/lib/services/professional-service";
 import { PaymentService } from "@/lib/services/payment-service";
+import { useAuth } from "@/lib/contexts/auth-context";
 
 // Dados simulados para categorias de serviços
 const serviceCategories = [
-  { id: "encanadores", name: "Encanadores" },
-  { id: "eletricistas", name: "Eletricistas" },
-  { id: "pintores", name: "Pintores" },
-  { id: "diaristas", name: "Diaristas" },
-  { id: "pedreiros", name: "Pedreiros" },
-  { id: "marceneiros", name: "Marceneiros" },
+  { id: "encanadores", name: "Encanador" },
+  { id: "eletricistas", name: "Eletricista" },
+  { id: "pintores", name: "Pintor" },
+  { id: "diaristas", name: "Diarista" },
+  { id: "pedreiros", name: "Pedreiro" },
+  { id: "marceneiros", name: "Marceneiro" },
 ];
 
 // Dados simulados para planos
@@ -112,6 +113,7 @@ interface FormData {
 }
 
 export default function CadastroProfissionalPage() {
+  const { signUp } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [selectedPlan, setSelectedPlan] = useState("");
@@ -205,8 +207,7 @@ export default function CadastroProfissionalPage() {
         email: formData.email,
         phone: formData.phone,
         cpf: formData.cpf,
-        //category: formData.category, ARRUMAR O FORM PARA RETORNAR CATEGORIAS SINGULARES
-        category: "Pedreiro",
+        category: formData.category,
         specialty: formData.specialty,
         experience: formData.experience ? parseInt(formData.experience) : null,
         description: formData.description,
@@ -216,6 +217,15 @@ export default function CadastroProfissionalPage() {
         address: formData.address,
         status: "pending",
       });
+
+      // Criar usuário no Auth
+      const registerAuth = await signUp(
+        formData.email,
+        formData.password,
+        professional
+      );
+
+      console.log(registerAuth);
 
       setProfessionalId(professional.id);
 
@@ -237,7 +247,7 @@ export default function CadastroProfissionalPage() {
       setPaymentId(payment.id);
 
       // Avançar para o próximo passo
-      setStep(3);
+      //setStep(3);
     } catch (error) {
       console.error("Erro ao cadastrar profissional:", error);
       setErrors({
@@ -580,6 +590,7 @@ export default function CadastroProfissionalPage() {
             </Alert>
           );
         }
+
         return <Button onClick={handleSubmit}>Já Paguei</Button>;
 
       default:
