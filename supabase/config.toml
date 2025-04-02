@@ -1,0 +1,33 @@
+# Configurações do projeto Supabase
+[api]
+# Habilitar a API REST
+enabled = true
+# Habilitar a API GraphQL
+graphql_enabled = true
+# Habilitar a API Realtime
+realtime_enabled = true
+
+[auth]
+# Configurações de autenticação
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://encontramais.com.br"]
+jwt_expiry = 3600
+enable_signup = true
+
+[storage]
+# Configurações de armazenamento
+file_size_limit = "50MiB"
+
+[db]
+# Configurações do banco de dados
+port = 5432
+shadow_port = 54320
+major_version = 15
+
+[studio]
+# Configurações do Studio
+enabled = true
+port = 54323
+api_url = "http://localhost:54321"
+db_url = "postgresql://postgres:postgres@localhost:54322/postgres"
+inbucket_url = "http://localhost:54324" 
