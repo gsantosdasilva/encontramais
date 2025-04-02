@@ -1,36 +1,41 @@
-import { Card } from '@/components/ui/card';
-import { ProfessionalService } from '@/lib/services/professional-service';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Database } from '@/lib/supabase.types';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { CreditCard, User, BarChart, Settings } from 'lucide-react';
-import { useAuth } from '@/lib/contexts/auth-context';
+"use client";
+import { Card } from "@/components/ui/card";
+import { ProfessionalService } from "@/lib/services/professional-service";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Database } from "@/lib/supabase.types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { CreditCard, User, BarChart, Settings } from "lucide-react";
+import { useAuth } from "@/lib/contexts/auth-context";
 
-type Professional = Database['public']['Tables']['professionals']['Row'];
+type Professional = Database["public"]["Tables"]["professionals"]["Row"];
 
 export default function DashboardPage() {
   const router = useRouter();
   const { professional: currentProfessional } = useAuth();
   const [professional, setProfessional] = useState<Professional | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     const loadProfessional = async () => {
+      console.log("current", currentProfessional);
       try {
         if (!currentProfessional) {
-          router.push('/login');
+          router.push("/login");
           return;
         }
 
-        const data = await ProfessionalService.getProfessional(currentProfessional.id);
+        const data = await ProfessionalService.getProfessional(
+          currentProfessional.id
+        );
+
         setProfessional(data);
       } catch (error) {
-        console.error('Erro ao carregar dados do profissional:', error);
-        setError('Erro ao carregar dados. Por favor, tente novamente.');
+        console.error("Erro ao carregar dados do profissional:", error);
+        setError("Erro ao carregar dados. Por favor, tente novamente.");
       } finally {
         setIsLoading(false);
       }
@@ -52,7 +57,9 @@ export default function DashboardPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold">Bem-vindo(a), {professional?.name}!</h1>
+        <h1 className="text-2xl font-bold">
+          Bem-vindo(a), {professional?.name}!
+        </h1>
         <p className="text-muted-foreground">
           Aqui está um resumo das suas informações e atividades
         </p>
@@ -68,13 +75,20 @@ export default function DashboardPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Status da Assinatura</p>
+              <p className="text-sm text-muted-foreground">
+                Status da Assinatura
+              </p>
               <p className="text-2xl font-bold mt-1">
-                {professional?.subscription_status === 'active' ? 'Ativa' : 'Inativa'}
+                {professional?.subscription_status === "active"
+                  ? "Ativa"
+                  : "Inativa"}
               </p>
               {professional?.subscription_end_date && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Expira em: {new Date(professional.subscription_end_date).toLocaleDateString()}
+                  Expira em:{" "}
+                  {new Date(
+                    professional.subscription_end_date
+                  ).toLocaleDateString()}
                 </p>
               )}
             </div>
@@ -90,9 +104,13 @@ export default function DashboardPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Visualizações do Perfil</p>
+              <p className="text-sm text-muted-foreground">
+                Visualizações do Perfil
+              </p>
               <p className="text-2xl font-bold mt-1">1.200</p>
-              <p className="text-sm text-muted-foreground mt-1">+15% este mês</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                +15% este mês
+              </p>
             </div>
             <BarChart className="h-8 w-8 text-primary" />
           </div>
@@ -106,7 +124,9 @@ export default function DashboardPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Contatos Recebidos</p>
+              <p className="text-sm text-muted-foreground">
+                Contatos Recebidos
+              </p>
               <p className="text-2xl font-bold mt-1">490</p>
               <p className="text-sm text-muted-foreground mt-1">+8% este mês</p>
             </div>
@@ -151,7 +171,9 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm text-muted-foreground">Experiência</p>
               <p className="font-medium">
-                {professional?.experience ? `${professional.experience} anos` : 'Não informada'}
+                {professional?.experience
+                  ? `${professional.experience} anos`
+                  : "Não informada"}
               </p>
             </div>
             <div>
@@ -197,4 +219,4 @@ export default function DashboardPage() {
       </div>
     </div>
   );
-} 
+}
