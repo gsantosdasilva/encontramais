@@ -1,9 +1,10 @@
-import { Card } from '@/components/ui/card';
-import { ProfessionalService } from '@/lib/services/professional-service';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Database } from '@/lib/supabase.types';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+"use client";
+import { Card } from "@/components/ui/card";
+import { ProfessionalService } from "@/lib/services/professional-service";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Database } from "@/lib/supabase.types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   BarChart,
   Bar,
@@ -12,36 +13,36 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-} from 'recharts';
+} from "recharts";
 
-type Professional = Database['public']['Tables']['professionals']['Row'];
+type Professional = Database["public"]["Tables"]["professionals"]["Row"];
 
 // Dados simulados para o gráfico
 const data = [
-  { name: 'Jan', views: 120, contacts: 45 },
-  { name: 'Fev', views: 150, contacts: 60 },
-  { name: 'Mar', views: 180, contacts: 75 },
-  { name: 'Abr', views: 200, contacts: 90 },
-  { name: 'Mai', views: 220, contacts: 100 },
-  { name: 'Jun', views: 250, contacts: 120 },
+  { name: "Jan", views: 120, contacts: 45 },
+  { name: "Fev", views: 150, contacts: 60 },
+  { name: "Mar", views: 180, contacts: 75 },
+  { name: "Abr", views: 200, contacts: 90 },
+  { name: "Mai", views: 220, contacts: 100 },
+  { name: "Jun", views: 250, contacts: 120 },
 ];
 
 export default function EstatisticasPage() {
   const router = useRouter();
   const [professional, setProfessional] = useState<Professional | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
 
   useEffect(() => {
     const loadProfessional = async () => {
       try {
         // TODO: Implementar autenticação e obter o ID do profissional logado
-        const professionalId = '123'; // Exemplo
+        const professionalId = "123"; // Exemplo
         const data = await ProfessionalService.getProfessional(professionalId);
         setProfessional(data);
       } catch (error) {
-        console.error('Erro ao carregar dados do profissional:', error);
-        setError('Erro ao carregar dados. Por favor, tente novamente.');
+        console.error("Erro ao carregar dados do profissional:", error);
+        setError("Erro ao carregar dados. Por favor, tente novamente.");
       } finally {
         setIsLoading(false);
       }
@@ -152,4 +153,4 @@ export default function EstatisticasPage() {
       </Card>
     </div>
   );
-} 
+}

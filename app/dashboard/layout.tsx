@@ -1,6 +1,7 @@
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+"use client";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   User,
@@ -8,15 +9,15 @@ import {
   BarChart,
   Settings,
   LogOut,
-} from 'lucide-react';
-import { useAuth } from '@/lib/contexts/auth-context';
+} from "lucide-react";
+import { useAuth } from "@/lib/contexts/auth-context";
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Perfil', href: '/dashboard/perfil', icon: User },
-  { name: 'Assinatura', href: '/dashboard/assinatura', icon: CreditCard },
-  { name: 'Estatísticas', href: '/dashboard/estatisticas', icon: BarChart },
-  { name: 'Configurações', href: '/dashboard/configuracoes', icon: Settings },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Perfil", href: "/dashboard/perfil", icon: User },
+  { name: "Assinatura", href: "/dashboard/assinatura", icon: CreditCard },
+  { name: "Estatísticas", href: "/dashboard/estatisticas", icon: BarChart },
+  { name: "Configurações", href: "/dashboard/configuracoes", icon: Settings },
 ];
 
 export default function DashboardLayout({
@@ -43,8 +44,8 @@ export default function DashboardLayout({
                 href={item.href}
                 className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
                   isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted'
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
                 }`}
               >
                 <item.icon className="mr-3 h-5 w-5" />
@@ -69,4 +70,4 @@ export default function DashboardLayout({
       <div className="flex-1">{children}</div>
     </div>
   );
-} 
+}

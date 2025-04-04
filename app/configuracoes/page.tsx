@@ -1,82 +1,93 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertCircle, Loader2, CheckCircle, Upload, Save } from "lucide-react"
-import { getSupabaseClient } from "@/lib/supabase/client"
-import { updatePassword } from "@/services/auth"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertCircle, Loader2, CheckCircle, Upload, Save } from "lucide-react";
+import { getSupabaseClient } from "@/lib/supabase/client";
+import { updatePassword } from "@/services/auth";
 
 export default function ConfiguracoesPage() {
-  const router = useRouter()
-  const [activeTab, setActiveTab] = useState("perfil")
-  const [isLoading, setIsLoading] = useState(false)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("perfil");
+  const [isLoading, setIsLoading] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Estados para o formulário de perfil
   const [profile, setProfile] = useState({
     name: "",
     email: "",
     avatar_url: null as string | null,
-  })
+  });
 
   // Estados para o formulário de senha
   const [passwords, setPasswords] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
-  })
+  });
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      const supabase = getSupabaseClient()
+      const supabase = getSupabaseClient();
 
       const {
         data: { session },
-      } = await supabase.auth.getSession()
+      } = await supabase.auth.getSession();
 
       if (session?.user) {
-        const { data } = await supabase.from("profiles").select("name, avatar_url").eq("id", session.user.id).single()
+        const { data } = await supabase
+          .from("profiles")
+          .select("name, avatar_url")
+          .eq("id", session.user.id)
+          .single();
 
         if (data) {
           setProfile({
             name: data.name,
             email: session.user.email || "",
             avatar_url: data.avatar_url,
-          })
+          });
         }
       } else {
         // Redirecionar para login se não estiver autenticado
-        router.push("/login")
+        router.push("/login");
       }
-    }
+    };
 
-    fetchUserProfile()
-  }, [router])
+    fetchUserProfile();
+  }, [router]);
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
-    setSuccess(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
 
     try {
-      const supabase = getSupabaseClient()
+      const supabase = getSupabaseClient();
 
       const {
         data: { session },
-      } = await supabase.auth.getSession()
+      } = await supabase.auth.getSession();
 
       if (!session?.user) {
-        throw new Error("Usuário não autenticado")
+        throw new Error("Usuário não autenticado");
       }
 
       // Atualizar perfil
@@ -85,88 +96,94 @@ export default function ConfiguracoesPage() {
         .update({
           name: profile.name,
         })
-        .eq("id", session.user.id)
+        .eq("id", session.user.id);
 
       if (profileError) {
-        throw new Error(profileError.message)
+        throw new Error(profileError.message);
       }
 
-      setSuccess("Perfil atualizado com sucesso!")
+      setSuccess("Perfil atualizado com sucesso!");
     } catch (err) {
-      console.error("Erro ao atualizar perfil:", err)
-      setError("Não foi possível atualizar o perfil. Tente novamente.")
+      console.error("Erro ao atualizar perfil:", err);
+      setError("Não foi possível atualizar o perfil. Tente novamente.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (passwords.newPassword !== passwords.confirmPassword) {
-      setError("As senhas não coincidem")
-      return
+      setError("As senhas não coincidem");
+      return;
     }
 
     if (passwords.newPassword.length < 6) {
-      setError("A nova senha deve ter pelo menos 6 caracteres")
-      return
+      setError("A nova senha deve ter pelo menos 6 caracteres");
+      return;
     }
 
-    setIsLoading(true)
-    setError(null)
-    setSuccess(null)
+    setIsLoading(true);
+    setError(null);
+    setSuccess(null);
 
     try {
-      await updatePassword(passwords.newPassword)
-      setSuccess("Senha atualizada com sucesso!")
+      await updatePassword(passwords.newPassword);
+      setSuccess("Senha atualizada com sucesso!");
       setPasswords({
         currentPassword: "",
         newPassword: "",
         confirmPassword: "",
-      })
+      });
     } catch (err) {
-      console.error("Erro ao atualizar senha:", err)
-      setError("Não foi possível atualizar a senha. Verifique sua senha atual e tente novamente.")
+      console.error("Erro ao atualizar senha:", err);
+      setError(
+        "Não foi possível atualizar a senha. Verifique sua senha atual e tente novamente."
+      );
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) {
-      return
+      return;
     }
 
-    const file = e.target.files[0]
-    setIsLoading(true)
-    setError(null)
+    const file = e.target.files[0];
+    setIsLoading(true);
+    setError(null);
 
     try {
-      const supabase = getSupabaseClient()
+      const supabase = getSupabaseClient();
 
       const {
         data: { session },
-      } = await supabase.auth.getSession()
+      } = await supabase.auth.getSession();
 
       if (!session?.user) {
-        throw new Error("Usuário não autenticado")
+        throw new Error("Usuário não autenticado");
       }
 
       // Upload da imagem
-      const fileExt = file.name.split(".").pop()
-      const fileName = `${session.user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${session.user.id}-${Math.random()
+        .toString(36)
+        .substring(2)}.${fileExt}`;
 
-      const { error: uploadError, data } = await supabase.storage.from("avatars").upload(fileName, file)
+      const { error: uploadError, data } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file);
 
       if (uploadError) {
-        throw new Error(uploadError.message)
+        throw new Error(uploadError.message);
       }
 
       // Obter URL pública
       const {
         data: { publicUrl },
-      } = supabase.storage.from("avatars").getPublicUrl(fileName)
+      } = supabase.storage.from("avatars").getPublicUrl(fileName);
 
       // Atualizar perfil com nova URL
       const { error: updateError } = await supabase
@@ -174,25 +191,25 @@ export default function ConfiguracoesPage() {
         .update({
           avatar_url: publicUrl,
         })
-        .eq("id", session.user.id)
+        .eq("id", session.user.id);
 
       if (updateError) {
-        throw new Error(updateError.message)
+        throw new Error(updateError.message);
       }
 
       setProfile({
         ...profile,
         avatar_url: publicUrl,
-      })
+      });
 
-      setSuccess("Foto de perfil atualizada com sucesso!")
+      setSuccess("Foto de perfil atualizada com sucesso!");
     } catch (err) {
-      console.error("Erro ao fazer upload da imagem:", err)
-      setError("Não foi possível atualizar a foto de perfil. Tente novamente.")
+      console.error("Erro ao fazer upload da imagem:", err);
+      setError("Não foi possível atualizar a foto de perfil. Tente novamente.");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="container py-12">
@@ -208,7 +225,9 @@ export default function ConfiguracoesPage() {
           <Card>
             <CardHeader>
               <CardTitle>Informações do Perfil</CardTitle>
-              <CardDescription>Atualize suas informações pessoais</CardDescription>
+              <CardDescription>
+                Atualize suas informações pessoais
+              </CardDescription>
             </CardHeader>
             <form onSubmit={handleProfileUpdate}>
               <CardContent className="space-y-4">
@@ -266,15 +285,24 @@ export default function ConfiguracoesPage() {
                   <Input
                     id="name"
                     value={profile.name}
-                    onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                    onChange={(e) =>
+                      setProfile({ ...profile, name: e.target.value })
+                    }
                     disabled={isLoading}
                   />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" value={profile.email} disabled={true} className="bg-muted/50" />
-                  <p className="text-xs text-muted-foreground">O email não pode ser alterado</p>
+                  <Input
+                    id="email"
+                    value={profile.email}
+                    disabled={true}
+                    className="bg-muted/50"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    O email não pode ser alterado
+                  </p>
                 </div>
               </CardContent>
               <CardFooter>
@@ -324,7 +352,12 @@ export default function ConfiguracoesPage() {
                     id="currentPassword"
                     type="password"
                     value={passwords.currentPassword}
-                    onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
+                    onChange={(e) =>
+                      setPasswords({
+                        ...passwords,
+                        currentPassword: e.target.value,
+                      })
+                    }
                     disabled={isLoading}
                   />
                 </div>
@@ -335,7 +368,12 @@ export default function ConfiguracoesPage() {
                     id="newPassword"
                     type="password"
                     value={passwords.newPassword}
-                    onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+                    onChange={(e) =>
+                      setPasswords({
+                        ...passwords,
+                        newPassword: e.target.value,
+                      })
+                    }
                     disabled={isLoading}
                   />
                 </div>
@@ -346,7 +384,12 @@ export default function ConfiguracoesPage() {
                     id="confirmPassword"
                     type="password"
                     value={passwords.confirmPassword}
-                    onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                    onChange={(e) =>
+                      setPasswords({
+                        ...passwords,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                     disabled={isLoading}
                   />
                 </div>
@@ -368,6 +411,5 @@ export default function ConfiguracoesPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
-
