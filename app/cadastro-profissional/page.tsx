@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { supabase } from "@/lib/supabase";
 import {
   Select,
   SelectContent,
@@ -36,12 +37,12 @@ import { useAuth } from "@/lib/contexts/auth-context";
 
 // Dados simulados para categorias de serviços
 const serviceCategories = [
-  { id: "encanadores", name: "Encanador" },
-  { id: "eletricistas", name: "Eletricista" },
-  { id: "pintores", name: "Pintor" },
-  { id: "diaristas", name: "Diarista" },
-  { id: "pedreiros", name: "Pedreiro" },
-  { id: "marceneiros", name: "Marceneiro" },
+  { id: "Encanador", name: "Encanador" },
+  { id: "Eletricista", name: "Eletricista" },
+  { id: "Pintor", name: "Pintor" },
+  { id: "Diarista", name: "Diarista" },
+  { id: "Pedreiro", name: "Pedreiro" },
+  { id: "Marceneiro", name: "Marceneiro" },
 ];
 
 // Dados simulados para planos
@@ -144,8 +145,74 @@ export default function CadastroProfissionalPage() {
 
   const totalSteps = 3;
 
-  const nextStep = () => {
-    if (step < totalSteps) {
+  const nextStep = async () => {
+    setErrors({});
+    if (step === 1) {
+      setIsLoading(true);
+      try {
+        const requiredFields = [
+          "name",
+          "email",
+          "phone",
+          "cpf",
+          "password",
+          "confirmPassword",
+          "category",
+          "specialty",
+          "description",
+          "cep",
+          "city",
+          "state",
+          "address",
+        ] as const;
+
+        const missingFields = requiredFields.filter(
+          (field) => !formData[field] || formData[field].trim() === ""
+        );
+
+        if (missingFields.length > 0) {
+          setErrors({
+            form: `Por favor, preencha todos os campos obrigatórios.`,
+          });
+          return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+          setErrors({ password: "As senhas não coincidem" });
+          return;
+        }
+
+        const normalizedEmail = formData.email.toLowerCase().trim();
+        const { data: existingUser, error } = await supabase
+          .from('professionals')
+          .select('id')
+          .eq('email', normalizedEmail)
+          .maybeSingle();
+
+        if (error) {
+          throw error;
+        }
+
+        if (existingUser) {
+          setErrors({
+            ...errors,
+            email: "Este email já está cadastrado"
+          });
+          return;
+        }
+
+        setStep(step + 1);
+        window.scrollTo(0, 0);
+      } catch (error) {
+        console.error('Error checking email:', error);
+        setErrors({
+          ...errors,
+          email: "Erro ao verificar email. Por favor, tente novamente."
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    } else if (step < totalSteps) {
       setStep(step + 1);
       window.scrollTo(0, 0);
     }
@@ -167,39 +234,6 @@ export default function CadastroProfissionalPage() {
     try {
       setIsLoading(true);
       setErrors({});
-
-      // Validar campos obrigatórios
-      const requiredFields = [
-        "name",
-        "email",
-        "phone",
-        "cpf",
-        "password",
-        "confirmPassword",
-        "category",
-        "specialty",
-        "description",
-        "cep",
-        "city",
-        "state",
-        "address",
-      ] as const;
-
-      const missingFields = requiredFields.filter((field) => !formData[field]);
-      if (missingFields.length > 0) {
-        setErrors({
-          form: `Por favor, preencha todos os campos obrigatórios: ${missingFields.join(
-            ", "
-          )}`,
-        });
-        return;
-      }
-
-      // Validar senha
-      if (formData.password !== formData.confirmPassword) {
-        setErrors({ password: "As senhas não coincidem" });
-        return;
-      }
 
       // Criar profissional no banco de dados
       const professional = await ProfessionalService.createProfessional({
@@ -277,30 +311,43 @@ export default function CadastroProfissionalPage() {
     setErrors({ ...errors, payment: error });
   };
 
-  const getStepIcon = (stepNumber: number) => {
-    switch (stepNumber) {
-      case 1:
-        return <User className="h-5 w-5" />;
-      case 2:
-        return <Package className="h-5 w-5" />;
-      case 3:
-        return <CreditCard className="h-5 w-5" />;
-      default:
-        return null;
+  const handleStepClick = (clickedStep: number) => {
+    if (clickedStep < step) {
+      setStep(clickedStep);
+      window.scrollTo(0, 0);
     }
   };
 
+  const getStepIcon = (stepNumber: number) => {
+    const icons = {
+      1: <User className="h-5 w-5" />,
+      2: <Package className="h-5 w-5" />,
+      3: <CreditCard className="h-5 w-5" />
+    };
+    return (
+      <div
+        onClick={() => handleStepClick(stepNumber)}
+        className={`cursor-pointer ${stepNumber < step ? "hover:text-primary" : ""}`}
+      >
+        {icons[stepNumber as keyof typeof icons]}
+      </div>
+    );
+  };
+
   const getStepTitle = (stepNumber: number) => {
-    switch (stepNumber) {
-      case 1:
-        return "Informações do Profissional";
-      case 2:
-        return "Escolha do Plano";
-      case 3:
-        return "Pagamento via PIX";
-      default:
-        return "";
-    }
+    const titles = [
+      "Informações do Profissional",
+      "Escolha do Plano",
+      "Pagamento via PIX"
+    ];
+    return (
+      <span
+        onClick={() => handleStepClick(stepNumber)}
+        className={`cursor-pointer ${stepNumber < step ? "hover:text-primary" : ""}`}
+      >
+        {titles[stepNumber - 1]}
+      </span>
+    );
   };
 
   const renderStep = () => {
@@ -314,94 +361,130 @@ export default function CadastroProfissionalPage() {
                 <Label htmlFor="name">
                   Nome completo <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="Digite seu nome completo"
-                />
+                <div>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    placeholder="Digite seu nome completo"
+                    className={errors.name ? "border-red-500" : ""}
+                  />
+                  {errors.name && (
+                    <span className="text-sm text-red-500">{errors.name}</span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">
                   Email <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  placeholder="seu@email.com"
-                />
+                <div>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    placeholder="seu@email.com"
+                    className={errors.email ? "border-red-500" : ""}
+                  />
+                  {errors.email && (
+                    <span className="text-sm text-red-500">{errors.email}</span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="phone">
                   Telefone <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
-                  placeholder="(00) 00000-0000"
-                />
+                <div>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    placeholder="(00) 00000-0000"
+                    className={errors.phone ? "border-red-500" : ""}
+                  />
+                  {errors.phone && (
+                    <span className="text-sm text-red-500">{errors.phone}</span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="cpf">
                   CPF <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="cpf"
-                  name="cpf"
-                  value={formData.cpf}
-                  onChange={(e) =>
-                    setFormData({ ...formData, cpf: e.target.value })
-                  }
-                  placeholder="000.000.000-00"
-                />
+                <div>
+                  <Input
+                    id="cpf"
+                    name="cpf"
+                    value={formData.cpf}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cpf: e.target.value })
+                    }
+                    placeholder="000.000.000-00"
+                    className={errors.cpf ? "border-red-500" : ""}
+                  />
+                  {errors.cpf && (
+                    <span className="text-sm text-red-500">{errors.cpf}</span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="password">
                   Senha <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                />
+                <div>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    className={errors.password ? "border-red-500" : ""}
+                  />
+                  {errors.password && (
+                    <span className="text-sm text-red-500">{errors.password}</span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">
                   Confirmar senha <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                />
+                <div>
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    className={errors.confirmPassword ? "border-red-500" : ""}
+                  />
+                  {errors.confirmPassword && (
+                    <span className="text-sm text-red-500">{errors.confirmPassword}</span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -433,15 +516,21 @@ export default function CadastroProfissionalPage() {
                 <Label htmlFor="specialty">
                   Especialidade <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="specialty"
-                  name="specialty"
-                  value={formData.specialty}
-                  onChange={(e) =>
-                    setFormData({ ...formData, specialty: e.target.value })
-                  }
-                  placeholder="Ex: Encanador Residencial"
-                />
+                <div>
+                  <Input
+                    id="specialty"
+                    name="specialty"
+                    value={formData.specialty}
+                    onChange={(e) =>
+                      setFormData({ ...formData, specialty: e.target.value })
+                    }
+                    placeholder="Ex: Encanador Residencial"
+                    className={errors.specialty ? "border-red-500" : ""}
+                  />
+                  {errors.specialty && (
+                    <span className="text-sm text-red-500">{errors.specialty}</span>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -463,16 +552,22 @@ export default function CadastroProfissionalPage() {
                 <Label htmlFor="description">
                   Descrição profissional <span className="text-red-500">*</span>
                 </Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  placeholder="Descreva sua experiência, habilidades e serviços oferecidos..."
-                  rows={5}
-                />
+                <div>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
+                    placeholder="Descreva sua experiência, habilidades e serviços oferecidos..."
+                    rows={5}
+                    className={errors.description ? "border-red-500" : ""}
+                  />
+                  {errors.description && (
+                    <span className="text-sm text-red-500">{errors.description}</span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -482,16 +577,22 @@ export default function CadastroProfissionalPage() {
                 <Label htmlFor="cep">
                   CEP <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="cep"
-                  name="cep"
-                  value={formData.cep}
-                  onChange={(e) =>
-                    setFormData({ ...formData, cep: e.target.value })
-                  }
-                  placeholder="00000-000"
-                  maxLength={9}
-                />
+                <div>
+                  <Input
+                    id="cep"
+                    name="cep"
+                    value={formData.cep}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cep: e.target.value })
+                    }
+                    placeholder="00000-000"
+                    maxLength={9}
+                    className={errors.cep ? "border-red-500" : ""}
+                  />
+                  {errors.cep && (
+                    <span className="text-sm text-red-500">{errors.cep}</span>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -499,30 +600,42 @@ export default function CadastroProfissionalPage() {
                   <Label htmlFor="city">
                     Cidade <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={(e) =>
-                      setFormData({ ...formData, city: e.target.value })
-                    }
-                    placeholder="Sua cidade"
-                  />
+                  <div>
+                    <Input
+                      id="city"
+                      name="city"
+                      value={formData.city}
+                      onChange={(e) =>
+                        setFormData({ ...formData, city: e.target.value })
+                      }
+                      placeholder="Sua cidade"
+                      className={errors.city ? "border-red-500" : ""}
+                    />
+                    {errors.city && (
+                      <span className="text-sm text-red-500">{errors.city}</span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="state">
                     Estado <span className="text-red-500">*</span>
                   </Label>
-                  <Input
-                    id="state"
-                    name="state"
-                    value={formData.state}
-                    onChange={(e) =>
-                      setFormData({ ...formData, state: e.target.value })
-                    }
-                    placeholder="Seu estado"
-                  />
+                  <div>
+                    <Input
+                      id="state"
+                      name="state"
+                      value={formData.state}
+                      onChange={(e) =>
+                        setFormData({ ...formData, state: e.target.value })
+                      }
+                      placeholder="Seu estado"
+                      className={errors.state ? "border-red-500" : ""}
+                    />
+                    {errors.state && (
+                      <span className="text-sm text-red-500">{errors.state}</span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -530,15 +643,21 @@ export default function CadastroProfissionalPage() {
                 <Label htmlFor="address">
                   Endereço <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={(e) =>
-                    setFormData({ ...formData, address: e.target.value })
-                  }
-                  placeholder="Rua, número, complemento"
-                />
+                <div>
+                  <Input
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={(e) =>
+                      setFormData({ ...formData, address: e.target.value })
+                    }
+                    placeholder="Rua, número, complemento"
+                    className={errors.address ? "border-red-500" : ""}
+                  />
+                  {errors.address && (
+                    <span className="text-sm text-red-500">{errors.address}</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -557,7 +676,7 @@ export default function CadastroProfissionalPage() {
                 >
                   {selectedPlan === plan.id && (
                     <div className="absolute -top-3 -right-3 bg-primary text-white rounded-full p-1 z-10">
-                      <Check className="h-5 w-5" />
+                      <Check className="h-5 w-5"/>
                     </div>
                   )}
                   <PriceCard
@@ -678,7 +797,7 @@ export default function CadastroProfissionalPage() {
                     }`}
                   >
                     {index + 1 < step ? (
-                      <Check className="h-5 w-5" />
+                      <Check className="h-5 w-5 cursor-pointer" onClick={() => handleStepClick(1)}/>
                     ) : (
                       getStepIcon(index + 1)
                     )}
@@ -700,6 +819,7 @@ export default function CadastroProfissionalPage() {
 
           <Card>
             <CardContent className="p-6">
+            
               <h2 className="text-xl font-bold mb-6">{getStepTitle(step)}</h2>
               {renderStep()}
 
@@ -717,12 +837,25 @@ export default function CadastroProfissionalPage() {
 
                   <Button
                     onClick={nextStep}
-                    disabled={step === 2 && !selectedPlan}
+                    disabled={(step === 2 && !selectedPlan) || isLoading}
                   >
-                    Continuar
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Verificando...
+                      </>
+                    ) : (
+                      "Continuar"
+                    )}
                   </Button>
                 </div>
               )}
+              {errors.form && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertCircle className="h-4 w-4 mr-2" />
+                <AlertDescription>{errors.form}</AlertDescription>
+              </Alert>
+            )}
             </CardContent>
           </Card>
         </div>
